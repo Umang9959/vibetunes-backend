@@ -127,6 +127,7 @@ function checkForCryingAcrossModels(allResults) {
   let totalSadness = 0;
   let totalFear = 0;
   let totalNeutral = 0;
+  let totalHappy = 0;
   let modelCount = allResults.length;
 
   allResults.forEach(result => {
@@ -134,10 +135,12 @@ function checkForCryingAcrossModels(allResults) {
       const sadEmotion = result.allEmotions.find(e => e.label.toLowerCase() === 'sad');
       const fearEmotion = result.allEmotions.find(e => e.label.toLowerCase() === 'fear');
       const neutralEmotion = result.allEmotions.find(e => e.label.toLowerCase() === 'neutral');
+      const happyEmotion = result.allEmotions.find(e => e.label.toLowerCase() === 'happy');
 
       if (sadEmotion) totalSadness += sadEmotion.score;
       if (fearEmotion) totalFear += fearEmotion.score;
       if (neutralEmotion) totalNeutral += neutralEmotion.score;
+      if (happyEmotion) totalHappy += happyEmotion.score;
     }
   });
 
@@ -145,15 +148,18 @@ function checkForCryingAcrossModels(allResults) {
   const avgSadness = totalSadness / modelCount;
   const avgFear = totalFear / modelCount;
   const avgNeutral = totalNeutral / modelCount;
+  const avgHappy = totalHappy / modelCount;
 
-  console.log(`🔍 Cross-model averages: Sad: ${(avgSadness * 100).toFixed(1)}%, Fear: ${(avgFear * 100).toFixed(1)}%, Neutral: ${(avgNeutral * 100).toFixed(1)}%`);
+  console.log(`🔍 Cross-model averages: Sad: ${(avgSadness * 100).toFixed(1)}%, Fear: ${(avgFear * 100).toFixed(1)}%, Neutral: ${(avgNeutral * 100).toFixed(1)}%, Happy: ${(avgHappy * 100).toFixed(1)}%`);
 
-  // Enhanced crying detection criteria (more sensitive to detect sadness in neutral expressions)
+  // MUCH MORE PRECISE crying detection criteria - only trigger for genuinely sad cases
   const cryingDetected = (
-    (avgNeutral > 0.6 && avgSadness > 0.02) || // High neutral with moderate sadness
-    (avgSadness > 0.05) || // Direct sadness detection (lowered threshold)
-    (avgFear > 0.03 && avgSadness > 0.01) || // Fear + sadness combination
-    (avgNeutral > 0.8 && (avgSadness + avgFear) > 0.03) // Very high neutral but some negative emotions
+    // Only if there's significant sadness AND low happiness
+    (avgSadness > 0.15 && avgHappy < 0.1) ||
+    // OR very high sadness regardless
+    (avgSadness > 0.25) ||
+    // OR strong fear+sadness combination with low happiness
+    (avgFear > 0.1 && avgSadness > 0.1 && avgHappy < 0.05)
   );
 
   if (cryingDetected) {
@@ -170,19 +176,24 @@ function applyCryingDetection(result) {
   const neutralEmotion = allEmotions.find(e => e.label.toLowerCase() === 'neutral');
   const sadEmotion = allEmotions.find(e => e.label.toLowerCase() === 'sad');
   const fearEmotion = allEmotions.find(e => e.label.toLowerCase() === 'fear');
+  const happyEmotion = allEmotions.find(e => e.label.toLowerCase() === 'happy');
 
   // Enhanced crying detection for single model
   const neutralScore = neutralEmotion ? neutralEmotion.score : 0;
   const sadScore = sadEmotion ? sadEmotion.score : 0;
   const fearScore = fearEmotion ? fearEmotion.score : 0;
+  const happyScore = happyEmotion ? happyEmotion.score : 0;
 
-  console.log(`🔍 Single model analysis: Neutral: ${(neutralScore * 100).toFixed(1)}%, Sad: ${(sadScore * 100).toFixed(1)}%, Fear: ${(fearScore * 100).toFixed(1)}%`);
+  console.log(`🔍 Single model analysis: Neutral: ${(neutralScore * 100).toFixed(1)}%, Sad: ${(sadScore * 100).toFixed(1)}%, Fear: ${(fearScore * 100).toFixed(1)}%, Happy: ${(happyScore * 100).toFixed(1)}%`);
 
-  // More aggressive crying detection
+  // MUCH MORE PRECISE single model crying detection - avoid false positives
   const cryingDetected = (
-    (neutralScore > 0.85 && sadScore > 0.002) || // Very high neutral with tiny sadness
-    (sadScore > 0.01) || // Direct sadness
-    (fearScore > 0.02 && sadScore > 0.001) // Fear + sadness
+    // Only trigger for significant sadness with low happiness
+    (sadScore > 0.2 && happyScore < 0.1) ||
+    // OR very high sadness regardless
+    (sadScore > 0.4) ||
+    // OR high fear + moderate sadness with very low happiness
+    (fearScore > 0.15 && sadScore > 0.1 && happyScore < 0.05)
   );
 
   if (cryingDetected) {
