@@ -1,13 +1,12 @@
 const axios = require('axios');
 const { mapMood, validateEmotionConsistency } = require('../utils/moodMapper');
 
-// Multiple Hugging Face AI models optimized for sad emotion detection
+// Multiple Hugging Face AI models optimized for facial emotion detection (image-compatible only)
 const AI_MODELS = [
-  'https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base',
-  'https://api-inference.huggingface.co/models/michellejieli/emotion_text_classifier',
   'https://api-inference.huggingface.co/models/trpakov/vit-face-expression',
-  'https://api-inference.huggingface.co/models/Sanster/liteface_emotion',
-  'https://api-inference.huggingface.co/models/dima806/facial_emotions_image_detection'
+  'https://api-inference.huggingface.co/models/dima806/facial_emotions_image_detection',
+  'https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base'
+  // Removed problematic models and kept only the most accurate ones
 ];
 
 // Enhanced emotion detection with crying/sadness bias correction
